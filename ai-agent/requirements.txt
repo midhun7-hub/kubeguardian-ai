@@ -2,3 +2,4 @@ fastapi
 uvicorn
 kubernetes
 requests
+pydantic
