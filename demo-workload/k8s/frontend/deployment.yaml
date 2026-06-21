@@ -8,6 +8,8 @@ metadata:
     app.kubernetes.io/part-of: kubeguardian-demo
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: frontend
@@ -19,7 +21,7 @@ spec:
       containers:
         - name: frontend
           image: 191072690914.dkr.ecr.ap-south-1.amazonaws.com/kubeguardian-frontend:v2
-	  imagePullPolicy: Always
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
               name: http
