@@ -4,6 +4,8 @@ from k8s_client import get_pods
 
 app = FastAPI()
 
+
+# Startup Probe
 @app.get("/health")
 def health():
     return {
@@ -11,13 +13,32 @@ def health():
         "status": "running"
     }
 
+
+# Readiness Probe
+@app.get("/ready")
+def ready():
+    return {
+        "status": "ready"
+    }
+
+
+# Liveness Probe
+@app.get("/live")
+def live():
+    return {
+        "status": "alive"
+    }
+
+
 @app.get("/rca/{issue}")
 def rca(issue: str):
     return analyze(issue)
 
+
 @app.get("/pods")
 def pods():
     return get_pods()
+
 
 @app.get("/cluster-health")
 def cluster_health():
@@ -27,6 +48,7 @@ def cluster_health():
         "nodes": 1,
         "pods": 3
     }
+
 
 @app.get("/incidents")
 def incidents():
@@ -38,4 +60,3 @@ def incidents():
             "recommendation": "Increase memory limit"
         }
     ]
-

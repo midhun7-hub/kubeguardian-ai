@@ -32,11 +32,11 @@ spec:
               mountPath: /data/db
           resources:
             requests:
-              cpu: "100m"
-              memory: "256Mi"
+              cpu: "50m"
+              memory: "128Mi"
             limits:
-              cpu: "500m"
-              memory: "512Mi"
+              cpu: "200m"
+              memory: "256Mi"
           livenessProbe:
             exec:
               command:
@@ -44,15 +44,17 @@ spec:
                 - --eval
                 - "db.adminCommand('ping')"
             initialDelaySeconds: 30
-            periodSeconds: 10
+            timeoutSeconds: 10
+            periodSeconds: 20
           readinessProbe:
             exec:
               command:
                 - mongosh
                 - --eval
                 - "db.adminCommand('ping')"
-            initialDelaySeconds: 5
-            periodSeconds: 5
+            initialDelaySeconds: 20
+            timeoutSeconds: 10
+            periodSeconds: 10
       volumes:
         - name: mongodb-data
           emptyDir: {}
