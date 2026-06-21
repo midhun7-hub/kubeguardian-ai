@@ -8,15 +8,13 @@ on:
 env:
   AWS_REGION: ap-south-1
   EKS_CLUSTER_NAME: kubeguardian
-  AWS_ACCOUNT_ID: 191072690914
+  AWS_ACCOUNT_ID: "191072690914"
 
 jobs:
   deploy:
-
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -27,78 +25,85 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Verify AWS Identity
+        run: aws sts get-caller-identity
+
       - name: Login to Amazon ECR
-        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       #################################################
-      # BACKEND
+      # Backend
       #################################################
 
       - name: Build Backend Image
         run: |
           docker build \
-          -t kubeguardian-backend:${{ github.sha }} \
-          ./demo-workload/backend
+            -t kubeguardian-backend:${{ github.sha }} \
+            ./demo-workload/backend
 
       - name: Tag Backend Image
         run: |
           docker tag kubeguardian-backend:${{ github.sha }} \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/kubeguardian-backend:${{ github.sha }}
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/kubeguardian-backend:${{ github.sha }}
 
       - name: Push Backend Image
         run: |
           docker push \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/kubeguardian-backend:${{ github.sha }}
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/kubeguardian-backend:${{ github.sha }}
 
       #################################################
-      # FRONTEND
+      # Frontend
       #################################################
 
       - name: Build Frontend Image
         run: |
           docker build \
-          -t kubeguardian-frontend:${{ github.sha }} \
-          ./demo-workload/frontend
+            -t kubeguardian-frontend:${{ github.sha }} \
+            ./demo-workload/frontend
 
       - name: Tag Frontend Image
         run: |
           docker tag kubeguardian-frontend:${{ github.sha }} \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/kubeguardian-frontend:${{ github.sha }}
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/kubeguardian-frontend:${{ github.sha }}
 
       - name: Push Frontend Image
         run: |
           docker push \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/kubeguardian-frontend:${{ github.sha }}
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/kubeguardian-frontend:${{ github.sha }}
 
       #################################################
-      # KUBECTL
+      # Deploy to EKS
       #################################################
 
       - name: Update Kubeconfig
         run: |
           aws eks update-kubeconfig \
-          --region $AWS_REGION \
-          --name $EKS_CLUSTER_NAME
+            --region $AWS_REGION \
+            --name $EKS_CLUSTER_NAME
+
+      - name: Verify Kubernetes Access
+        run: kubectl get nodes
 
       - name: Deploy Backend
         run: |
           kubectl set image deployment/backend \
-          backend=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/kubeguardian-backend:${{ github.sha }} \
-          -n kubeguardian-demo
+            backend=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/kubeguardian-backend:${{ github.sha }} \
+            -n kubeguardian-demo
 
       - name: Deploy Frontend
         run: |
           kubectl set image deployment/frontend \
-          frontend=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/kubeguardian-frontend:${{ github.sha }} \
-          -n kubeguardian-demo
+            frontend=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/kubeguardian-frontend:${{ github.sha }} \
+            -n kubeguardian-demo
 
       - name: Wait For Backend Rollout
         run: |
           kubectl rollout status deployment/backend \
-          -n kubeguardian-demo
+            -n kubeguardian-demo \
+            --timeout=300s
 
       - name: Wait For Frontend Rollout
         run: |
           kubectl rollout status deployment/frontend \
-          -n kubeguardian-demo
+            -n kubeguardian-demo \
+            --timeout=300s
