@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: kubeguardian-demo
+  labels:
+    app: frontend
+    app.kubernetes.io/part-of: kubeguardian-demo
+data:
+  VITE_API_URL: ""
